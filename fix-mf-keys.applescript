@@ -3,7 +3,7 @@
 -- Purpose   : Change the format of <M-f..> key sequences to M-<f..>.
 -- Created   : Friday, October  9 2026.
 -- Author    : Pierre Rouleau <prouleau001@gmail.com>
--- Time-stamp: <2026-10-09 14:31:28 EDT, updated by Pierre Rouleau>
+-- Time-stamp: <2026-10-09 16:09:26 EDT, updated by Pierre Rouleau>
 -- ---------------------------------------------------------------------------
 -- Module Description
 -- ------------------
@@ -21,7 +21,6 @@
 -- ------------
 --
 --
-
 
 -- ---------------------------------------------------------------------------
 -- Code
@@ -45,43 +44,52 @@ tell application "Numbers"
 		return
 	end if
 
-	tell document 1
-		-- Loop through every Sheet (Tab)
-		repeat with aSheet in sheets
-			set sheetChanged to false
-			set sheetName to name of aSheet
+        tell document 1
+	    repeat with aSheet in sheets
+		set sheetChanged to false
+		set sheetName to name of aSheet
 
-			-- Loop through every Table inside the current Tab
-			repeat with aTable in tables of aSheet
-				tell aTable
-					-- Optimize by looping through populated cells
-					repeat with aCell in cells
-						set cellValue to value of aCell
-						-- Only check text cells
-						if class of cellValue is text then
-							repeat with i from 1 to count of findList
-								set toFind to item i of findList
-								set toReplace to item i of replaceList
+		repeat with aTable in tables of aSheet
+		    tell aTable
+			-- Loop through rows and columns structurally rather than blindly pulling all cells
+			repeat with r from 1 to count of rows
+			    repeat with c from 1 to count of columns
+				set aCell to cell c of row r
+				set cellName to name of aCell
 
-								if cellValue contains toFind then
-									-- Perform the string replacement
-									set newValue to my replaceText(cellValue, toFind, toReplace)
-									set value of aCell to newValue
-									set sheetChanged to true
-								end if
-							end repeat
-						end if
+				-- Numbers Quirk Fix: If the actual cell name doesn't match the row/column coordinate,
+				-- it's a hidden constituent of a merged block. Skip it to prevent changing
+                                -- the same text more than once
+				if cellName is (name of column c & r) then
+				    set cellValue to value of aCell
+
+				    if class of cellValue is text then
+					repeat with i from 1 to count of findList
+					    set toFind to item i of findList
+					    set toReplace to item i of replaceList
+
+					    if cellValue contains toFind then
+						-- Perform the string replacement
+						set newValue to my replaceText(cellValue, toFind, toReplace)
+						set value of aCell to newValue
+						set sheetChanged to true
+					    end if
 					end repeat
-				end tell
-			end repeat
-
-			-- Record the tab name if any changes occurred
-			if sheetChanged is true then
-				if sheetName is not in changedTabs then
-					copy sheetName to end of changedTabs
+				    end if
 				end if
-			end if
+
+			    end repeat
+			end repeat
+		    end tell
 		end repeat
+
+		-- Record the tab name if any changes occurred
+		if sheetChanged is true then
+		    if sheetName is not in changedTabs then
+			copy sheetName to end of changedTabs
+		    end if
+		end if
+	    end repeat
 	end tell
 end tell
 
