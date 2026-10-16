@@ -1,0 +1,19 @@
+# Identifies files to be ignored by Git.
+# Also used by fd|fdfind  to identify directories and files to ignore
+
+# macOS fork files
+.DS_Store
+
+# Emacs Backup files
+*~
+
+# Emacs temporary files
+.#*
+*#
+\#*
+
+# Applescript output files
+*.scpt
+*.app
+
+# ----------------------------------------------------------------------------
